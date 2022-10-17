@@ -30,6 +30,7 @@
 """
 from __future__ import annotations
 
+import collections
 import re
 import typing as typ
 
@@ -53,41 +54,43 @@ from .patterns import RE_PATTERN_ESCAPES
 #       bad:  (?:[1-2][0-9]|3[0-1]|[1-9])
 
 
-PART_PATTERNS = {
-    # Based on calver.org
-    "YYYY": r"[1-9][0-9]{3}",
-    "YY": r"[1-9][0-9]?",
-    "0Y": r"[0-9]{2}",
-    "GGGG": r"[1-9][0-9]{3}",
-    "GG": r"[1-9][0-9]?",
-    "0G": r"[0-9]{2}",
-    "Q": r"[1-4]",
-    "MM": r"1[0-2]|[1-9]",
-    "0M": r"1[0-2]|0[1-9]",
-    "DD": r"3[0-1]|[1-2][0-9]|[1-9]",
-    "0D": r"3[0-1]|[1-2][0-9]|0[1-9]",
-    "JJJ": r"36[0-6]|3[0-5][0-9]|[1-2][0-9][0-9]|[1-9][0-9]|[1-9]",
-    "00J": r"36[0-6]|3[0-5][0-9]|[1-2][0-9][0-9]|0[1-9][0-9]|00[1-9]",
-    # week numbering parts
-    "WW": r"5[0-2]|[1-4][0-9]|[0-9]",
-    "0W": r"5[0-2]|[0-4][0-9]",
-    "UU": r"5[0-2]|[1-4][0-9]|[0-9]",
-    "0U": r"5[0-2]|[0-4][0-9]",
-    "VV": r"5[0-3]|[1-4][0-9]|[1-9]",
-    "0V": r"5[0-3]|[1-4][0-9]|0[1-9]",
-    # non calver parts
-    "MAJOR": r"[0-9]+",
-    "MINOR": r"[0-9]+",
-    "PATCH": r"[0-9]+",
-    "BUILD": r"[0-9]+",
-    "BLD": r"[1-9][0-9]*",
-    "TAG": r"preview|final|alpha|beta|post|rc",
-    "PYTAG": r"post|rc|a|b",
-    "GITHASH": r"\.[0-9]+\+.*",
-    "NUM": r"[0-9]+",
-    "INC0": r"[0-9]+",
-    "INC1": r"[1-9][0-9]*",
-}
+PART_PATTERNS = collections.OrderedDict(
+    [
+        # Based on calver.org
+        ("YYYY", r"[1-9][0-9]{3}"),
+        ("YY", r"[1-9][0-9]?"),
+        ("0Y", r"[0-9]{2}"),
+        ("GGGG", r"[1-9][0-9]{3}"),
+        ("GG", r"[1-9][0-9]?"),
+        ("0G", r"[0-9]{2}"),
+        ("Q", r"[1-4]"),
+        ("MM", r"1[0-2]|[1-9]"),
+        ("0M", r"1[0-2]|0[1-9]"),
+        ("DD", r"3[0-1]|[1-2][0-9]|[1-9]"),
+        ("0D", r"3[0-1]|[1-2][0-9]|0[1-9]"),
+        ("JJJ", r"36[0-6]|3[0-5][0-9]|[1-2][0-9][0-9]|[1-9][0-9]|[1-9]"),
+        ("00J", r"36[0-6]|3[0-5][0-9]|[1-2][0-9][0-9]|0[1-9][0-9]|00[1-9]"),
+        # week numbering parts
+        ("WW", r"5[0-2]|[1-4][0-9]|[0-9]"),
+        ("0W", r"5[0-2]|[0-4][0-9]"),
+        ("UU", r"5[0-2]|[1-4][0-9]|[0-9]"),
+        ("0U", r"5[0-2]|[0-4][0-9]"),
+        ("VV", r"5[0-3]|[1-4][0-9]|[1-9]"),
+        ("0V", r"5[0-3]|[1-4][0-9]|0[1-9]"),
+        # non calver parts
+        ("MAJOR", r"[0-9]+"),
+        ("MINOR", r"[0-9]+"),
+        ("PATCH", r"[0-9]+"),
+        ("BUILD", r"[0-9]+"),
+        ("BLD", r"[1-9][0-9]*"),
+        ("TAG", r"preview|final|alpha|beta|post|rc"),
+        ("PYTAG", r"post|rc|a|b"),
+        ("GITHASH", r"\.[0-9]+\+.*"),
+        ("NUM", r"[0-9]+"),
+        ("INC0", r"[0-9]+"),
+        ("INC1", r"[1-9][0-9]*"),
+    ]
+)
 
 
 PATTERN_PART_FIELDS = {
@@ -287,6 +290,34 @@ def normalize_pattern(version_pattern: str, raw_pattern: str) -> str:
     return normalized_pattern
 
 
+SortKey = typ.Tuple[int, int]
+PostitionedPart = typ.Tuple[int, int, str]
+
+
+def _iter_part_patterns(
+    pattern: str,
+) -> typ.Iterator[typ.Tuple[SortKey, PostitionedPart]]:
+    used_fields: typ.Set[str] = set()
+    for part_name, part_pattern in PART_PATTERNS.items():
+        end_idx = 0
+        while True:
+            start_idx = pattern.find(part_name, end_idx)
+            if start_idx < 0:
+                break
+
+            field = PATTERN_PART_FIELDS[part_name]
+            if field in used_fields:
+                named_part_pattern = f"(?P<{field}_{len(used_fields)}>{part_pattern})"
+            else:
+                named_part_pattern = f"(?P<{field}>{part_pattern})"
+            used_fields.add(field)
+
+            end_idx = start_idx + len(part_name)
+            sort_key = (-end_idx, -len(part_name))
+            positioned_part = (start_idx, end_idx, named_part_pattern)
+            yield (sort_key, positioned_part)
+
+
 def _replace_pattern_parts(pattern: str) -> str:
     # The pattern is escaped, so that everything besides the format
     # string variables is treated literally.
@@ -297,18 +328,9 @@ def _replace_pattern_parts(pattern: str) -> str:
         if _n + _m == 0:
             break
 
-    SortKey = typ.Tuple[int, int]
-    PostitionedPart = typ.Tuple[int, int, str]
-    part_patterns_by_index: typ.Dict[SortKey, PostitionedPart] = {}
-
-    for part_name, part_pattern in PART_PATTERNS.items():
-        start_idx = pattern.find(part_name)
-        if start_idx >= 0:
-            field = PATTERN_PART_FIELDS[part_name]
-            named_part_pattern = f"(?P<{field}>{part_pattern})"
-            end_idx = start_idx + len(part_name)
-            sort_key = (-end_idx, -len(part_name))
-            part_patterns_by_index[sort_key] = (start_idx, end_idx, named_part_pattern)
+    part_patterns_by_index: typ.Dict[SortKey, PostitionedPart] = dict(
+        _iter_part_patterns(pattern)
+    )
 
     # NOTE (mb 2020-09-17): The sorting is done so that we process items:
     #   - right before left

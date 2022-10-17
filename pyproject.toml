@@ -1,26 +1,11 @@
 [tool.poetry]
 name = "bumpver"
-version = "2022.1118"
+version = "2022.1119"
 description = "Bump version numbers in project files."
 authors = ["Manuel Barkhau <mbarkhau@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 homepage = 'https://github.com/mbarkhau/bumpver'
-classifiers = [
-    # http://pypi.python.org/pypi?%3Aaction=list_classifiers
-    "Development Status :: 5 - Production/Stable",
-    "Environment :: Console",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Developers",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: Implementation :: PyPy",
-    "Programming Language :: Python",
-]
 keywords = ['version', 'bumpver', 'calver', 'semver', 'versioning', 'bumpversion', 'pep440']
 include = ['LICENSE', "bumpver/py.typed", "CHANGELOG.md"]
 

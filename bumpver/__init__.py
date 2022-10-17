@@ -6,4 +6,4 @@
 """BumpVer: A CLI program for versioning."""
 from __future__ import annotations
 
-__version__ = "2022.1118"
+__version__ = "2022.1119"
