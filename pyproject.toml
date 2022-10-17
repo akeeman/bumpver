@@ -52,12 +52,6 @@ push = true
 "bumpver/cli.py" = [
     '@click.version_option(version="{version}")',
 ]
-"bumpver/*.py" = [
-    'Copyright (c) 2018-YYYY',
-]
-"LICENSE" = [
-    'Copyright (c) 2018-YYYY',
-]
 "README.md" = [
     '\[CalVer {version}\]',
     'img.shields.io/static/v1.svg?label=CalVer&message={version}&color=blue',
