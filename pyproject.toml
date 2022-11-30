@@ -15,7 +15,7 @@ click = "^8.0"
 colorama = "^0.4"
 lexid = "^2021.1006"
 toml = "^0.10"
-setuptools = "^60"
+setuptools = ">=60,<66"
 
 [tool.poetry.group.dev.dependencies]
 pretty-traceback = "^2022.1018"
