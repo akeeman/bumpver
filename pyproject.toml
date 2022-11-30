@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bumpver"
-version = "2022.1119"
+version = "2022.1119.1"
 description = "Bump version numbers in project files."
 authors = ["Manuel Barkhau <mbarkhau@gmail.com>"]
 license = "MIT"
@@ -35,8 +35,8 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.bumpver]
-current_version = "2022.1118"
-version_pattern = "YYYY.BUILD[-TAG]"
+current_version = "2022.1119.1"
+version_pattern = "YYYY.BUILD[.PATCH]"
 commit_message = "bump {old_version} -> {new_version}"
 commit = true
 tag = true
